@@ -1,0 +1,7 @@
+[package]
+name = "poindexter"
+version = "0.1.0"
+authors = ["Haze Booth <isnt@haze.cool>"]
+edition = "2018"
+
+[dependencies]
