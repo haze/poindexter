@@ -1,5 +1,7 @@
 use std::cell::RefCell;
 
+mod test;
+
 pub struct PrintWorker {
     // what to display when work is being done
     work_suffix: String,
@@ -31,7 +33,7 @@ impl Drop for PrintWorker {
             // clear work on stdout
             let stdout = std::io::stdout();
             let mut handle = stdout.lock();
-            self.finish_work(&mut handle);
+            self.finish_work(&mut handle).ok();
         }
     }
 }
@@ -51,15 +53,22 @@ impl PrintWorker {
     pub fn println<S: Into<String>>(&self, text: S) -> Result<(), std::io::Error> {
         let stdout = std::io::stdout();
         let mut handle = stdout.lock();
+        self.easy_println_to(&mut handle, text)
+    }
 
+    fn easy_println_to<S: Into<String>, W: std::io::Write>(
+        &self,
+        sink: &mut W,
+        text: S,
+    ) -> Result<(), std::io::Error> {
         // im at a fault here, is it easier to just set stdout_used each time
         // or is it okay to make a check? in theory the check is 2 ops
         // while just setting is 1, but idk
         *self.stdout_used.borrow_mut() = true;
         if (*self.last_message.borrow()).is_some() {
-            self.finish_work(&mut handle)?;
+            self.finish_work(sink)?;
         }
-        self.println_working_to(&mut handle, text)
+        self.println_working_to(sink, text)
     }
 
     fn reset_cursor<W: std::io::Write>(&self, sink: &mut W) -> Result<(), std::io::Error> {
@@ -70,7 +79,7 @@ impl PrintWorker {
             let clear_amount = last_message_text.len() + self.work_suffix.len();
             sink.write_all(result.as_bytes())?;
             sink.write_all(
-                &std::iter::repeat(' ' as u8)
+                &std::iter::repeat(b' ')
                     .take(clear_amount)
                     .collect::<Vec<u8>>()
                     .as_slice(),
@@ -108,13 +117,5 @@ impl PrintWorker {
         let text = text; // ensure we cannot mutate after this point
         sink.write_all(text.as_bytes())?;
         sink.flush()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }
