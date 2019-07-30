@@ -2,6 +2,8 @@
 
 poindexter is a rust library for printing output while also signaling intended work wait times
 
+![Demo](./demo.svg)
+
 ## Installation
 
 Add this to your cargo.toml
